@@ -183,7 +183,7 @@ func printResource(resourceTypePattern string, attributes []string, clients map[
 
 // print resources in csv format, and save it into the aws-resource folder
 func printResourcesCsv(resourceTypePattern string, resources []aws.Resource, hasAttrs map[string]bool, attributes []string) {
-	csvFile, err := os.Create("aws-resource/" + resourceTypePattern + ".csv")
+	csvFile, err := os.Create("./aws-resource/" + resourceTypePattern + ".csv")
 	if err != nil {
 		panic(err)
 	}
