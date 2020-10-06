@@ -14,6 +14,7 @@ import (
 	"github.com/jckuester/terradozer/pkg/provider"
 	flag "github.com/spf13/pflag"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -155,9 +156,9 @@ func printResource(resourceTypePattern string, attributes []string, clients map[
 				continue
 			}
 
-			provider := providers[key]
+			terraformProvider := providers[key]
 
-			hasAttrs, err = resource.HasAttributes(attributes, rType, &provider)
+			hasAttrs, err = resource.HasAttributes(attributes, rType, &terraformProvider)
 			if err != nil {
 				fmt.Fprint(os.Stderr, color.RedString("Error: failed to check if resource type has attribute: "+
 					"%s\n", err))
@@ -183,17 +184,22 @@ func printResource(resourceTypePattern string, attributes []string, clients map[
 
 // print resources in csv format, and save it into the aws-resource folder
 func printResourcesCsv(resourceTypePattern string, resources []aws.Resource, hasAttrs map[string]bool, attributes []string) {
-	csvFile, err := os.Create("./aws-resource/" + resourceTypePattern + ".csv")
+	filePath := filepath.Join("aws-resources/", resourceTypePattern+".csv")
+	err := os.MkdirAll("aws-resources/", os.ModePerm)
 	if err != nil {
 		panic(err)
 	}
+	csvFile, err := os.Create(filePath)
+	if err != nil {
+		panic(err)
+	}
+	defer csvFile.Close()
 	w := csv.NewWriter(csvFile)
 
 	printHeaderCsv(w, attributes)
 
 	for _, r := range resources {
 		resourceItem := []string{r.Type, r.ID}
-		resourceItem = append(resourceItem, r.ID)
 		if r.CreatedAt != nil {
 			resourceItem = append(resourceItem, r.CreatedAt.Format("2006-01-02 15:04:05"))
 		} else {
@@ -220,7 +226,7 @@ func printResourcesCsv(resourceTypePattern string, resources []aws.Resource, has
 		}
 	}
 	w.Flush()
-	_ = fmt.Sprintf("printed csv file into %s", csvFile.Name())
+	_, _ = fmt.Printf("printed csv file into %s \n", csvFile.Name())
 }
 
 // print csv header with fixed type and attributes
