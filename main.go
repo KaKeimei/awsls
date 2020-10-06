@@ -1,12 +1,12 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"io/ioutil"
 	stdlog "log"
 	"os"
 	"strings"
-	"text/tabwriter"
 	"time"
 
 	"github.com/jckuester/awsls/util"
@@ -195,38 +195,33 @@ func mainExitCode() int {
 		if len(resources) == 0 {
 			continue
 		}
-
-		printResources(resources, hasAttrs, attributes)
+		printResourcesCsv(resourceTypePattern, resources, hasAttrs, attributes)
 	}
 
 	return 0
 }
 
-func printResources(resources []aws.Resource, hasAttrs map[string]bool, attributes []string) {
-	const padding = 3
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, padding, ' ', tabwriter.TabIndent)
+// print resources in csv format, and save it into the aws-resource folder
+func printResourcesCsv(resourceTypePattern string, resources []aws.Resource, hasAttrs map[string]bool, attributes []string) {
+	csvFile, err := os.Create("aws-resource/" + resourceTypePattern + ".csv")
+	if err != nil {
+		panic(err)
+	}
+	w := csv.NewWriter(csvFile)
 
-	printHeader(w, attributes)
+	printHeaderCsv(w, attributes)
 
 	for _, r := range resources {
-		profile := `N/A`
-		if r.Profile != "" {
-			profile = r.Profile
-		}
-
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s", r.Type, r.ID, profile, r.Region)
-
+		resourceItem := []string{r.Type, r.ID}
+		resourceItem = append(resourceItem, r.ID)
 		if r.CreatedAt != nil {
-			fmt.Fprintf(w, "\t%s", r.CreatedAt.Format("2006-01-02 15:04:05"))
+			resourceItem = append(resourceItem, r.CreatedAt.Format("2006-01-02 15:04:05"))
 		} else {
-			fmt.Fprint(w, "\tN/A")
+			resourceItem = append(resourceItem, "")
 		}
-
 		for _, attr := range attributes {
 			v := "N/A"
-
 			_, ok := hasAttrs[attr]
-
 			if ok {
 				var err error
 				v, err = resource.GetAttribute(attr, &r)
@@ -237,25 +232,27 @@ func printResources(resources []aws.Resource, hasAttrs map[string]bool, attribut
 					v = "error"
 				}
 			}
-
-			fmt.Fprintf(w, "\t%s", v)
+			resourceItem = append(resourceItem, v)
 		}
-
-		fmt.Fprintf(w, "\t\n")
+		err := w.Write(resourceItem)
+		if err != nil {
+			panic(err)
+		}
 	}
-
 	w.Flush()
-	fmt.Println()
+	_ = fmt.Sprintf("printed csv file into %s", csvFile.Name())
 }
 
-func printHeader(w *tabwriter.Writer, attributes []string) {
-	fmt.Fprintf(w, "TYPE\tID\tPROFILE\tREGION\tCREATED")
-
+// print csv header with fixed type and attributes
+func printHeaderCsv(w *csv.Writer, attributes []string) {
+	header := []string{"TYPE", "ID", "CREATED"}
 	for _, attribute := range attributes {
-		fmt.Fprintf(w, "\t%s", strings.ToUpper(attribute))
+		header = append(header, attribute)
 	}
-
-	fmt.Fprintf(w, "\t\n")
+	err := w.Write(header)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func printHelp(fs *flag.FlagSet) {
