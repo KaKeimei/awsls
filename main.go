@@ -123,7 +123,7 @@ func mainExitCode() int {
 		}
 	}()
 
-	var attributes []string
+	attributes := []string{"private_ip", "public_ip", "tags"}
 	printResource("aws_instance", attributes, clients, providers)
 	return 0
 }
