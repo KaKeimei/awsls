@@ -5,3 +5,5 @@
 bin/
 coverage.txt
 awsls
+
+aws-resources
