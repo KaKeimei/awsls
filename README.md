@@ -1,23 +1,11 @@
 # awsls
 
 A list command for AWS resources.
-
-[![Release](https://img.shields.io/github/release/jckuester/awsls.svg?style=for-the-badge)](https://github.com/jckuester/awsls/releases/latest)
-[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=for-the-badge)](/LICENSE.md)
-[![Travis](https://img.shields.io/travis/jckuester/awsls/master.svg?style=for-the-badge)](https://travis-ci.org/jckuester/awsls)
+This is a fork from https://github.com/jckuester/awsls , turn the output to csv files and print particular resources only.
 
 awsls supports listing of [over 200 types of resources](#supported-resources)
 across 76 different AWS services. The goal is to code-generate a list function for
-every AWS resource that is covered by the Terraform AWS Provider (currently over 500). If you want to contribute,
-[the generator is here](./gen).
-
-If you encounter any issue with `awsls` or have a feature request, 
-please open an issue or write me on [Twitter](https://twitter.com/jckuester).
-
-Happy listing!
-
-**Note:** If you're also looking for an easy but powerful way to delete AWS resources, pipe the output of `awsls` into its new sibling
-[`awsrm`](https://github.com/jckuester/awsrm) via Unix-pipes and use well-known standard tooling such as `grep` for filtering.
+every AWS resource that is covered by the Terraform AWS Provider (currently over 500).
 
 ## Features
 
@@ -27,49 +15,45 @@ Happy listing!
   (e.g., `-p account1,account2 -r us-east-1,us-west-2`)
 * Show any resource attribute documented in the [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
   (e.g., `-a private_ip,tags` lists the IP and tags for resources of type [`aws_instance`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance#attributes-reference))
+  
+## Resources Printed
+This tool will generate csv format aws resources into folder `./aws-resources/`, and use resource_pattern as file name, like
 
-## Examples
+```
+./aws-resources/aws_instance.csv
+```
 
-### List various resource attributes
+The following resources will be particularly printed just for convenience, if you want to add more, just modify the code in main.go.
 
-Use Terraform resource types to tell `awsls` which resources to list. For example, `awsls aws_instance` shows
-all EC2 instances. In addition to the default attributes `TYPE`, `ID`, `REGION`, and `CREATED` timestamp, additional attributes
-can be displayed via the `--attributes <comma-separated list>` flag. Every attribute in the Terraform documentation 
-([here](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance#attributes-reference) are the attributes for `aws_instance`) is a valid one:
-
-![](img/instance.gif)
-
-### List multiple resource types at once (via glob patterns)
-
-For example, `awsls "aws_iam_*` lists all IAM resources:
-
-![](img/iam.gif)
-
-### List across multiple accounts and regions
-
-To use specific profiles and/or regions, use the `-p (--profiles)` or `-r (--regions)` flags. For example,
-`-p myaccount1,myaccount2 -r us-east-1,us-west-2` lists resources in every permutation of the given profiles and regions, 
-i.e., resources in region `us-west-2` and `us-east-1` for account `myaccount1` as well as `myaccount2`:
-
-![](img/multi-profiles-and-regions.gif)
+| Resource Type | Attributes |
+| --- | --- |
+| aws_instance | "instance_type", "instance_state", "private_ip", "public_ip", "tags" |
+| aws_ebs_volume | "size", "tags" |
+| aws_eip | "public_ip", "tags" |
+| aws_s3_bucket | "tags" |
+| aws_nat_gateway | "tags" |
+| aws_db_instance | "instance_class", "tags" |
 
 ## Usage
 
-	awsls [flags] <resource_type glob pattern>
+```
+$ chmod +x awsls
+$ ./awsls [flags]
+```
 
-To see options available run `awsls --help`.
+To see options available run `./awsls --help`.
 
-## Installation
+## Installation and Build
 
 It's recommended to install a specific version of awsls available on the
-[releases page](https://github.com/jckuester/awsls/releases).
+[releases page](https://github.com/KaKeimei/awsls/releases).
 
-Here is the recommended way to install awsls v0.5.1:
+To build awsls, install golang in your os:
 
-```bash
-# install it into ./bin/
-curl -sSfL https://raw.githubusercontent.com/jckuester/awsls/master/install.sh | sh -s v0.5.1
-```
+[install golang](https://golang.org/doc/install)
+
+and just run `make build` in the source folder
+
 
 ## Credentials, profiles and regions
 
@@ -88,8 +72,7 @@ The `--all-profiles` flag will use all profiles from `~/.aws/config`, or if `AWS
 ## Supported resources
 
 Currently, all 217 resource types across 77 services in the table below can be listed with awsls. The `Tags` column shows if a resource
-supports displaying tags, the `Creation Time` column if a resource has a creation timestamp, and the `Owner` column if
-resources are pre-filtered belonging to the account owner.
+supports displaying tags, the `Creation Time` column if a resource has a creation timestamp.
 
 Note: the prefix `aws_` for resource types is now optional. This means, for example,
 `awsls aws_instance` and `awsls instance` are both valid commands.
