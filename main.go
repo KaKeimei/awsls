@@ -122,9 +122,30 @@ func mainExitCode() int {
 			_ = p.Close()
 		}
 	}()
-
-	attributes := []string{"private_ip", "public_ip", "tags"}
+	// print ec2 instance
+	attributes := []string{"instance_type", "instance_state", "private_ip", "public_ip", "tags"}
 	printResource("aws_instance", attributes, clients, providers)
+
+	// print ebs volumes
+	attributes = []string{"size", "tags"}
+	printResource("aws_ebs_volume", attributes, clients, providers)
+
+	// print eip
+	attributes = []string{"public_ip", "tags"}
+	printResource("aws_eip", attributes, clients, providers)
+
+	// print s3
+	attributes = []string{"tags"}
+	printResource("aws_s3_bucket", attributes, clients, providers)
+
+	// print nat gateway
+	attributes = []string{"tags"}
+	printResource("aws_nat_gateway", attributes, clients, providers)
+
+	// print rds instance
+	attributes = []string{"instance_class", "tags"}
+	printResource("aws_db_instance", attributes, clients, providers)
+
 	return 0
 }
 
@@ -250,7 +271,7 @@ const help = `
 awsls - list AWS resources.
 
 USAGE:
-  $ awsls [flags] <resource_type glob pattern>
+  $ awsls [flags] 
 
 FLAGS:
 `
